@@ -1,4 +1,3 @@
-# Created with the help of CURSOR
 # FairSplit
 
 FairSplit is a modern web application designed to help groups split expenses fairly and efficiently. Built with React, TypeScript, and TailwindCSS, it provides a clean and intuitive interface for managing shared expenses.
