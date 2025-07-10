@@ -1,9 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+@layer base {
+  body {
+    @apply bg-gradient-dark text-white font-sans antialiased;
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply backdrop-blur-xl bg-glass-light border border-white/20 shadow-2xl;
+  }
+  
+  .glass-dark {
+    @apply backdrop-blur-xl bg-glass-dark border border-white/10 shadow-2xl;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-fire text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95;
+  }
+  
+  .btn-secondary {
+    @apply glass text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 hover:bg-white/20;
+  }
+  
+  .input-glass {
+    @apply glass text-white placeholder-white/60 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-fire-500 focus:border-transparent transition-all duration-300;
+  }
+  
+  .card-glass {
+    @apply glass rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-fire bg-clip-text text-transparent;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .shadow-3xl {
+    box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
+  }
 }

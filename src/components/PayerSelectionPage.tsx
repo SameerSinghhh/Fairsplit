@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { 
+  ArrowLeftIcon, 
+  CheckCircleIcon, 
+  CurrencyDollarIcon,
+  ArrowRightIcon,
+  UserIcon
+} from '@heroicons/react/24/outline';
 
 interface Item {
   id: string;
@@ -150,109 +157,179 @@ const PayerSelectionPage = () => {
   };
 
   const handleContinue = () => {
-    if (payerSelections.some((selection) => selection.isPaying)) {
-      const settlements = calculateSettlements();
+    const selectedPayers = payerSelections.filter((selection) => selection.isPaying);
+    if (selectedPayers.length === 0) return;
 
-      navigate(`/summary/${groupId}`, {
-        state: {
-          settlements,
-          totalAmount,
-        },
-      });
-    }
+    const settlements = calculateSettlements();
+
+    navigate(`/summary/${groupId}`, {
+      state: {
+        settlements,
+        totalAmount,
+        members,
+        payerSelections,
+      },
+    });
   };
 
+  const selectedPayersCount = payerSelections.filter(s => s.isPaying).length;
+  const amountPerPayer = selectedPayersCount > 0 ? totalAmount / selectedPayersCount : 0;
+
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Select Who's Paying</h2>
-          <button
-            onClick={() => navigate('/')}
-            className="text-primary-600 hover:text-primary-700"
-          >
-            Leave Group
-          </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigate(`/group/${groupId}`)}
+          className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
+        >
+          <ArrowLeftIcon className="w-6 h-6" />
+        </button>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white">Who's Paying?</h1>
+          <p className="text-white/60 text-sm">Select who will pay the bill</p>
         </div>
+        <div className="w-10"></div>
+      </div>
 
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4">Total Amount</h3>
-          <p className="text-3xl font-bold text-primary-600">
-            ${totalAmount.toFixed(2)}
-          </p>
+      {/* Total Amount */}
+      <div className="card-glass text-center">
+        <div className="space-y-2">
+          <CurrencyDollarIcon className="w-12 h-12 text-fire-400 mx-auto" />
+          <h3 className="text-lg font-semibold text-white">Total Amount</h3>
+          <p className="text-4xl font-bold text-gradient">${totalAmount.toFixed(2)}</p>
+          {selectedPayersCount > 0 && (
+            <p className="text-white/60 text-sm">
+              ${amountPerPayer.toFixed(2)} per payer
+            </p>
+          )}
         </div>
+      </div>
 
-        <div className="space-y-4 mb-8">
+      {/* Member Selection */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-white">Select Payers</h3>
+        <div className="space-y-3">
           {members.map(member => {
             const memberTotal = member.items.reduce((sum, item) => sum + item.amount, 0);
             const isPaying = payerSelections.find(s => s.memberId === member.id)?.isPaying || false;
 
-            // Calculate tax and tip amounts
+            // Calculate what they owe
+            const totalMealCost = members.reduce(
+              (sum, m) => sum + m.items.reduce((itemSum, item) => itemSum + item.amount, 0),
+              0
+            );
+
             let taxAmount = 0;
             let tipAmount = 0;
 
-            // Handle tax calculation
             if (tax.includes('%')) {
-              taxAmount = (parseFloat(tax) || 0) / 100 * memberTotal;
+              taxAmount = ((parseFloat(tax) || 0) / 100) * totalMealCost;
             } else {
               taxAmount = parseFloat(tax) || 0;
             }
 
-            // Handle tip calculation
             if (tip.includes('%')) {
-              tipAmount = (parseFloat(tip) || 0) / 100 * memberTotal;
+              tipAmount = ((parseFloat(tip) || 0) / 100) * totalMealCost;
             } else {
               tipAmount = parseFloat(tip) || 0;
             }
 
-            // Calculate total including their share of tax and tip
-            const totalWithTaxAndTip = memberTotal + (taxAmount + tipAmount) / members.length;
+            const taxAndTipPerPerson = (taxAmount + tipAmount) / members.length;
+            const whatTheyOwe = memberTotal + taxAndTipPerPerson;
 
             return (
-              <div
-                key={member.id}
-                className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
-                onClick={() => togglePayer(member.id)}
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="font-semibold">{member.name}</h3>
-                    <div className="text-sm text-gray-600">
-                      {member.items.map(item => (
-                        <div key={item.id}>
-                          {item.description}: ${item.amount.toFixed(2)}
+              <div key={member.id} className="card-glass">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                        isPaying ? 'bg-gradient-fire' : 'bg-white/10'
+                      }`}>
+                        {isPaying ? (
+                          <CheckCircleIcon className="w-6 h-6 text-white" />
+                        ) : (
+                          <UserIcon className="w-6 h-6 text-white/60" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-white">{member.name}</h4>
+                      <p className="text-white/60 text-sm">
+                        Owes: ${whatTheyOwe.toFixed(2)}
+                      </p>
+                      {member.items.length > 0 && (
+                        <p className="text-white/40 text-xs">
+                          {member.items.length} item{member.items.length > 1 ? 's' : ''}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => togglePayer(member.id)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                      isPaying
+                        ? 'bg-gradient-fire text-white shadow-lg'
+                        : 'btn-secondary text-sm'
+                    }`}
+                  >
+                    {isPaying ? 'Paying' : 'Select'}
+                  </button>
+                </div>
+
+                {/* Show member's items */}
+                {member.items.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <div className="space-y-2">
+                      {member.items.map((item) => (
+                        <div key={item.id} className="flex justify-between text-sm">
+                          <span className="text-white/80">{item.description}</span>
+                          <span className="text-fire-400 font-medium">${item.amount.toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <span className="font-medium">
-                      Total: ${totalWithTaxAndTip.toFixed(2)}
-                    </span>
-                    <div
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                        isPaying
-                          ? 'bg-primary-600 border-primary-600 text-white'
-                          : 'border-gray-300'
-                      }`}
-                    >
-                      {isPaying && '✓'}
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             );
           })}
         </div>
+      </div>
 
-        <div className="flex justify-end">
-          <button
-            onClick={handleContinue}
-            className="bg-primary-600 text-white px-6 py-3 rounded-md hover:bg-primary-700"
-          >
-            Continue to Summary
-          </button>
+      {/* Summary */}
+      {selectedPayersCount > 0 && (
+        <div className="card-glass space-y-4">
+          <h3 className="text-lg font-semibold text-white">Payment Summary</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between text-white/80">
+              <span>Selected payers:</span>
+              <span>{selectedPayersCount}</span>
+            </div>
+            <div className="flex justify-between text-white/80">
+              <span>Amount per payer:</span>
+              <span>${amountPerPayer.toFixed(2)}</span>
+            </div>
+            <div className="border-t border-white/20 pt-2">
+              <div className="flex justify-between text-lg font-bold text-white">
+                <span>Total:</span>
+                <span className="text-gradient">${totalAmount.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* Continue Button */}
+      <div className="sticky bottom-0 pt-4">
+        <button
+          onClick={handleContinue}
+          disabled={selectedPayersCount === 0}
+          className="w-full btn-primary flex items-center justify-center gap-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Continue to Summary
+          <ArrowRightIcon className="w-6 h-6" />
+        </button>
       </div>
     </div>
   );
